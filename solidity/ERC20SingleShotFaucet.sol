@@ -31,11 +31,12 @@ contract SingleShotFaucet {
 
 	function giveTo(address _recipient) public returns (bool) {
 		require(!overriders[_recipient], 'ERR_ACCESS');
-		(bool _ok, bytes memory _result) = store.call(abi.encodeWithSignature("isLocked(address)", _recipient));
+		(bool _ok, bytes memory _result) = store.call(abi.encodeWithSignature("have(address)", _recipient));
 		
 		require(_result[31] == 0, 'ERR_ACCOUNT_USED'); // less conversion than: // require(abi.decode(_result, (bool)) == false, 'ERR_ACCOUNT_USED');
 
-		(_ok, _result) = store.call(abi.encodeWithSignature("lock(address)", _recipient));
+		//(_ok, _result) = store.call(abi.encodeWithSignature("lock(address)", _recipient));
+		(_ok, _result) = store.call(abi.encodeWithSignature("add(address)", _recipient));
 		require(_ok, 'ERR_MARK_FAIL');
 
 		(_ok, _result) = token.call(abi.encodeWithSignature("transfer(address,uint256)", _recipient, amount));

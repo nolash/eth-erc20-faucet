@@ -24,12 +24,12 @@ contract SingleShotFaucetStorage {
 		return true;
 	}
 
-	function lock(address _account) external returns (bool) {
+	function add(address _account) external returns (bool) {
 		used_accounts[_account] = true;
 		return true;
 	}
 
-	function isLocked(address _account) external view returns (bool) {
+	function have(address _account) external view returns (bool) {
 		return used_accounts[_account];
 	}
 }

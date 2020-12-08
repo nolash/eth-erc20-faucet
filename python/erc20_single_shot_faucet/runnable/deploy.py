@@ -39,7 +39,7 @@ def main():
     if args.a != None:
         w3.eth.defaultAccount = web3.Web3.toChecksumAddress(args.a)
 
-    token_address = web3.Web3.toChecksumAddress(args.t)
+    token_address = args.t
 
     f = open(os.path.join(args.contracts_dir, 'ERC20SingleShotFaucetStorage.abi.json'), 'r')
     abi = json.load(f)

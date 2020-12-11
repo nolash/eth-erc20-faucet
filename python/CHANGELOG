@@ -1,0 +1,5 @@
+- 0.0.2
+	* Rename contracts-dir flag to abi-dir
+	* Use package data dir as abi dir
+- 0.0.1
+	* Add deployer script

@@ -21,12 +21,15 @@ logg = logging.getLogger()
 logging.getLogger('web3').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 
+script_dir = os.path.dirname(__file__)
+data_dir = os.path.join(script_dir, '..', 'data')
+
 argparser = argparse.ArgumentParser()
 argparser.add_argument('-p', '--provider', dest='p', default='http://localhost:8545', type=str, help='Web3 provider url (http only)')
 argparser.add_argument('-a', '--approvers', dest='a', action='append', type=str, help='Approver account to add')
 argparser.add_argument('-o', '--owner', dest='o', type=str, help='Owner account (provider must have private key)')
 argparser.add_argument('-t', '--token-address', dest='t', required=True, type=str, help='Token to add faucet for')
-argparser.add_argument('--contracts-dir', dest='contracts_dir', default='.', help='Directory containing bytecode and abi')
+argparser.add_argument('--abi-dir', dest='abi_dir', type=str, default=data_dir, help='Directory containing bytecode and abi (default: {})'.format(data_dir))
 argparser.add_argument('-v', action='store_true', help='Be verbose')
 args = argparser.parse_args()
 
@@ -41,11 +44,11 @@ def main():
 
     token_address = args.t
 
-    f = open(os.path.join(args.contracts_dir, 'ERC20SingleShotFaucetStorage.abi.json'), 'r')
+    f = open(os.path.join(args.abi_dir, 'ERC20SingleShotFaucetStorage.abi.json'), 'r')
     abi = json.load(f)
     f.close()
 
-    f = open(os.path.join(args.contracts_dir, 'ERC20SingleShotFaucetStorage.bin'), 'r')
+    f = open(os.path.join(args.abi_dir, 'ERC20SingleShotFaucetStorage.bin'), 'r')
     bytecode = f.read()
     f.close()
 
@@ -54,11 +57,11 @@ def main():
     r = w3.eth.getTransactionReceipt(tx_hash)
     store_address = r.contractAddress
 
-    f = open(os.path.join(args.contracts_dir, 'ERC20SingleShotFaucet.abi.json'), 'r')
+    f = open(os.path.join(args.abi_dir, 'ERC20SingleShotFaucet.abi.json'), 'r')
     abi = json.load(f)
     f.close()
 
-    f = open(os.path.join(args.contracts_dir, 'ERC20SingleShotFaucet.bin'), 'r')
+    f = open(os.path.join(args.abi_dir, 'ERC20SingleShotFaucet.bin'), 'r')
     bytecode = f.read()
     f.close()
 

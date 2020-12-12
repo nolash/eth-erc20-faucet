@@ -1,1 +1,1 @@
-include **/*.abi.json
+include **/data/*.json **/data/*.bin

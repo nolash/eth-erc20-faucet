@@ -34,11 +34,18 @@ class Faucet:
 
 
     @staticmethod
-    def abi():
+    def abi(part=None):
         if Faucet.__abi == None:
             f = open(os.path.join(datadir, 'ERC20SingleShotFaucet.abi.json'), 'r')
             Faucet.__abi = json.load(f)
             f.close()
+        if part == 'storage':
+            f = open(os.path.join(datadir, 'ERC20SingleShotFaucetStorage.abi.json'))
+            abi = f.read()
+            f.close()
+            return abi
+        elif part != None:
+            raise ValueError('unknown abi identifier "{}"'.format(part))
         return Faucet.__abi
 
 

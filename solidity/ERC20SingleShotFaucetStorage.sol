@@ -18,7 +18,7 @@ contract SingleShotFaucetStorage {
 		return true;
 	}
 
-	function completeOwnership() external returns (bool) {
+	function acceptOwnership() external returns (bool) {
 		require(msg.sender == new_owner);
 		owner = msg.sender;
 		return true;

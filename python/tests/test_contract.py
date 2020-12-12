@@ -7,8 +7,6 @@ import web3
 import eth_tester
 import eth_abi
 
-from erc20_single_shot_faucet import Faucet
-
 logging.basicConfig(level=logging.DEBUG)
 logg = logging.getLogger()
 
@@ -58,15 +56,15 @@ class Test(unittest.TestCase):
         self.abi_token = json.load(f)
         f.close()
 
-        self.token = self.w3.eth.contract(abi=self.abi_token, bytecode=bytecode)
-        tx_hash = self.token.constructor('Foo Token', 'FOO', 18).transact({'from': self.w3.eth.accounts[0]})
+        t = self.w3.eth.contract(abi=self.abi_token, bytecode=bytecode)
+        tx_hash = t.constructor('Foo Token', 'FOO', 18).transact({'from': self.w3.eth.accounts[0]})
 
         r = self.w3.eth.getTransactionReceipt(tx_hash)
 
         self.address_token = r.contractAddress
-        self.token = self.w3.eth.contract(abi=self.abi_token, address=self.address_token)
+        t = self.w3.eth.contract(abi=self.abi_token, address=self.address_token)
 
-        tx_hash = self.token.functions.mint(1000).transact({'from': self.w3.eth.accounts[0]})
+        tx_hash = t.functions.mint(1000).transact({'from': self.w3.eth.accounts[0]})
 
 
         # create faucet
@@ -96,23 +94,42 @@ class Test(unittest.TestCase):
         self.address_faucet = r.contractAddress
         c = self.w3.eth.contract(abi=self.abi_faucet, address=self.address_faucet)
 
-        tx_hash = self.token.functions.transfer(self.address_faucet, 100).transact({'from': self.w3.eth.accounts[0]})
-
-        c.functions.setAmount(10).transact({'from': self.w3.eth.accounts[2]})
+        tx_hash = t.functions.transfer(self.address_faucet, 100).transact({'from': self.w3.eth.accounts[0]})
 
 
     def tearDown(self):
         pass
 
 
-    def test_sanity(self):
-        faucet = Faucet(self.w3, self.address_faucet)
+    def test_basic(self):
+        c = self.w3.eth.contract(abi=self.abi_faucet, address=self.address_faucet)
+        self.assertTrue(c.functions.setAmount(10).transact({'from': self.w3.eth.accounts[0]}))
+        self.assertTrue(c.functions.setAmount(20).transact({'from': self.w3.eth.accounts[1]}))
+        with self.assertRaises(Exception):
+            c.functions.setAmount(30).transact({'from': self.w3.eth.accounts[3]})
 
 
-    def test_give(self):
-        faucet = Faucet(self.w3, self.address_faucet)
-        faucet.give_to(self.w3.eth.accounts[3])
-        self.assertEqual(self.token.functions.balanceOf(self.w3.eth.accounts[3]).call(), 10);
+    def test_giveto(self):
+        c = self.w3.eth.contract(abi=self.abi_faucet, address=self.address_faucet)
+        c.functions.setAmount(10).transact({'from': self.w3.eth.accounts[2]})
+        c.functions.giveTo(self.w3.eth.accounts[3]).transact({'from': self.w3.eth.accounts[1]})
 
-if __name__ == '__main__':
-    unittest.main()
+        t = self.w3.eth.contract(abi=self.abi_token, address=self.address_token)
+        self.assertEqual(t.functions.balanceOf(self.w3.eth.accounts[3]).call(), 10);
+        self.assertEqual(t.functions.balanceOf(self.address_faucet).call(), 90);
+
+        with self.assertRaises(Exception):
+            c.functions.giveTo(self.w3.eth.accounts[3]).transact({'from': self.w3.eth.accounts[1]})
+
+        c.functions.setAmount(50).transact({'from': self.w3.eth.accounts[1]})
+        c.functions.giveTo(self.w3.eth.accounts[4]).transact({'from': self.w3.eth.accounts[1]})
+        self.assertEqual(t.functions.balanceOf(self.w3.eth.accounts[4]).call(), 50);
+        self.assertEqual(t.functions.balanceOf(self.address_faucet).call(), 40);
+
+        with self.assertRaises(Exception):
+            c.functions.giveTo(self.w3.eth.accounts[5]).transact({'from': self.w3.eth.accounts[1]})
+        self.assertEqual(t.functions.balanceOf(self.w3.eth.accounts[5]).call(), 0);
+        self.assertEqual(t.functions.balanceOf(self.address_faucet).call(), 40);
+
+
+

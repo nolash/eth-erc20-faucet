@@ -32,7 +32,7 @@ class Test(unittest.TestCase):
         bytecode = f.read()
         f.close()
 
-        f = open(os.path.join(testdir, '../erc20_single_shot_faucet/data/ERC20SingleShotFaucetStorage.abi.json'), 'r')
+        f = open(os.path.join(testdir, '../erc20_single_shot_faucet/data/ERC20SingleShotFaucetStorage.json'), 'r')
         self.abi_storage = json.load(f)
         f.close()
 
@@ -54,7 +54,7 @@ class Test(unittest.TestCase):
         bytecode = f.read()
         f.close()
 
-        f = open(os.path.join(testdir, '../erc20_single_shot_faucet/data/GiftableToken.abi.json'), 'r')
+        f = open(os.path.join(testdir, '../erc20_single_shot_faucet/data/GiftableToken.json'), 'r')
         self.abi_token = json.load(f)
         f.close()
 
@@ -74,11 +74,11 @@ class Test(unittest.TestCase):
         bytecode = f.read()
         f.close()
 
-        f = open(os.path.join(testdir, '../erc20_single_shot_faucet/data/ERC20SingleShotFaucet.abi.json'), 'r')
+        f = open(os.path.join(testdir, '../erc20_single_shot_faucet/data/ERC20SingleShotFaucet.json'), 'r')
         self.abi_faucet = json.load(f)
         f.close()
 
-#        f = open(os.path.join(testdir, '../erc20_single_shot_faucet/data/ERC20SingleShotFaucet.abi.json'), 'r')
+#        f = open(os.path.join(testdir, '../erc20_single_shot_faucet/data/ERC20SingleShotFaucet.json'), 'r')
 #        abi_storage_interface = json.load(f)
 #        f.close()
 

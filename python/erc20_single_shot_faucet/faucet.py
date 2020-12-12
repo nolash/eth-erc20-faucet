@@ -36,11 +36,11 @@ class Faucet:
     @staticmethod
     def abi(part=None):
         if Faucet.__abi == None:
-            f = open(os.path.join(datadir, 'ERC20SingleShotFaucet.abi.json'), 'r')
+            f = open(os.path.join(datadir, 'ERC20SingleShotFaucet.json'), 'r')
             Faucet.__abi = json.load(f)
             f.close()
         if part == 'storage':
-            f = open(os.path.join(datadir, 'ERC20SingleShotFaucetStorage.abi.json'))
+            f = open(os.path.join(datadir, 'ERC20SingleShotFaucetStorage.json'))
             abi = f.read()
             f.close()
             return abi

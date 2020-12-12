@@ -23,7 +23,8 @@ class Faucet:
     def __init__(self, w3, address, signer_address=None):
         abi = Faucet.abi()
         Faucet.bytecode()
-        self.contract = w3.eth.contract(abi=abi, address=address)
+        self.address =address
+        self.contract = w3.eth.contract(abi=abi, address=self.address)
         self.w3 = w3
         if signer_address != None:
             self.signer_address = signer_address
@@ -71,3 +72,7 @@ class Faucet:
             'from': self.signer_address,
         })
         return tx_hash
+
+
+    def address():
+        return self.address

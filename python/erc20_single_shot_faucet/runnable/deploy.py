@@ -44,7 +44,7 @@ def main():
 
     token_address = args.t
 
-    f = open(os.path.join(args.abi_dir, 'ERC20SingleShotFaucetStorage.abi.json'), 'r')
+    f = open(os.path.join(args.abi_dir, 'ERC20SingleShotFaucetStorage.json'), 'r')
     abi = json.load(f)
     f.close()
 
@@ -57,7 +57,7 @@ def main():
     r = w3.eth.getTransactionReceipt(tx_hash)
     store_address = r.contractAddress
 
-    f = open(os.path.join(args.abi_dir, 'ERC20SingleShotFaucet.abi.json'), 'r')
+    f = open(os.path.join(args.abi_dir, 'ERC20SingleShotFaucet.json'), 'r')
     abi = json.load(f)
     f.close()
 

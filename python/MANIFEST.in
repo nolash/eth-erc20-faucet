@@ -1,1 +1,1 @@
-include **/data/*.json **/data/*.bin
+include **/data/*Faucet*.json **/data/*Faucet*.bin

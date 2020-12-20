@@ -39,8 +39,8 @@ if args.v:
 def main():
     w3 = web3.Web3(web3.Web3.HTTPProvider(args.p))
     w3.eth.defaultAccount = w3.eth.accounts[0]
-    if args.a != None:
-        w3.eth.defaultAccount = web3.Web3.toChecksumAddress(args.a)
+    if args.o != None:
+        w3.eth.defaultAccount = web3.Web3.toChecksumAddress(args.o)
 
     token_address = args.t
 

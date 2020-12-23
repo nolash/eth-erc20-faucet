@@ -8,7 +8,7 @@ contract SingleShotFaucetStorage {
 
 	mapping (address => bool) public used_accounts;
 
-	constructor() public {
+	constructor() {
 		owner = msg.sender;
 	}
 

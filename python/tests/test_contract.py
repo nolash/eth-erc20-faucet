@@ -46,6 +46,11 @@ class Test(unittest.TestCase):
 
         self.address_storage = r.contractAddress
 
+        # create mock external accounts index
+        c = self.w3.eth.contract(abi=self.abi_storage, bytecode=bytecode)
+        tx_hash = c.constructor().transact({'from': self.w3.eth.accounts[0]})
+        r = self.w3.eth.getTransactionReceipt(tx_hash)
+        self.address_index = r.contractAddress
 
         # create token
         f = open(os.path.join(testdir, '../erc20_single_shot_faucet/data/GiftableToken.bin'), 'r')
@@ -87,6 +92,7 @@ class Test(unittest.TestCase):
             ],
             self.address_token,
             self.address_storage,
+            self.address_index,
             ).transact({'from': self.w3.eth.accounts[0]})
 
         r = self.w3.eth.getTransactionReceipt(tx_hash)
@@ -109,9 +115,25 @@ class Test(unittest.TestCase):
             c.functions.setAmount(30).transact({'from': self.w3.eth.accounts[3]})
 
 
-    def test_giveto(self):
+    def test_gimme(self):
         c = self.w3.eth.contract(abi=self.abi_faucet, address=self.address_faucet)
         c.functions.setAmount(10).transact({'from': self.w3.eth.accounts[2]})
+
+        with self.assertRaises(Exception):
+            c.functions.gimme().transact({'from': self.w3.eth.accounts[3]})
+
+        ci = self.w3.eth.contract(abi=self.abi_storage, address=self.address_index)
+        ci.functions.add(self.w3.eth.accounts[3]).transact()
+        c.functions.gimme().transact({'from': self.w3.eth.accounts[3]})
+
+
+    def test_giveto(self):
+        c = self.w3.eth.contract(abi=self.abi_faucet, address=self.address_faucet)
+        ci = self.w3.eth.contract(abi=self.abi_storage, address=self.address_index)
+        ci.functions.add(self.w3.eth.accounts[3]).transact()
+
+        c.functions.setAmount(10).transact({'from': self.w3.eth.accounts[2]})
+        #with self.assertRaises(Exception):
         c.functions.giveTo(self.w3.eth.accounts[3]).transact({'from': self.w3.eth.accounts[1]})
 
         t = self.w3.eth.contract(abi=self.abi_token, address=self.address_token)
@@ -122,10 +144,12 @@ class Test(unittest.TestCase):
             c.functions.giveTo(self.w3.eth.accounts[3]).transact({'from': self.w3.eth.accounts[1]})
 
         c.functions.setAmount(50).transact({'from': self.w3.eth.accounts[1]})
+        ci.functions.add(self.w3.eth.accounts[4]).transact()
         c.functions.giveTo(self.w3.eth.accounts[4]).transact({'from': self.w3.eth.accounts[1]})
         self.assertEqual(t.functions.balanceOf(self.w3.eth.accounts[4]).call(), 50);
         self.assertEqual(t.functions.balanceOf(self.address_faucet).call(), 40);
 
+        ci.functions.add(self.w3.eth.accounts[5]).transact()
         with self.assertRaises(Exception):
             c.functions.giveTo(self.w3.eth.accounts[5]).transact({'from': self.w3.eth.accounts[1]})
         self.assertEqual(t.functions.balanceOf(self.w3.eth.accounts[5]).call(), 0);

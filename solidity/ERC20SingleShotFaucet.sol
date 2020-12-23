@@ -9,11 +9,12 @@ contract SingleShotFaucet {
 	uint256 public amount;
 	address public token;
 	address store;
+	address accountsIndex;
 
 	event FaucetUsed(address indexed _recipient, address indexed _token, uint256 _value);
 	event FaucetFail(address indexed _recipient, address indexed _token, uint256 _value);
 
-	constructor(address[] memory _overriders, address _token, address _store) public {
+	constructor(address[] memory _overriders, address _token, address _store, address _accountsIndex)  {
 		owner = msg.sender;
 		overriders[msg.sender] = true;
 		for (uint i = 0; i < _overriders.length; i++) {
@@ -21,6 +22,7 @@ contract SingleShotFaucet {
 		}
 		store = _store;
 		token = _token;
+		accountsIndex = _accountsIndex;
 	}
 
 	function setAmount(uint256 _amount) public returns (bool) {
@@ -29,9 +31,22 @@ contract SingleShotFaucet {
 		return true;
 	}
 
+	function gimme() public returns (bool) {
+		return giveTo(msg.sender);
+	}
+
 	function giveTo(address _recipient) public returns (bool) {
 		require(!overriders[_recipient], 'ERR_ACCESS');
-		(bool _ok, bytes memory _result) = store.call(abi.encodeWithSignature("have(address)", _recipient));
+	
+		bool _ok;
+		bytes memory _result;
+
+		if (accountsIndex != address(0)) {	
+			(_ok,  _result) = accountsIndex.call(abi.encodeWithSignature("have(address)", _recipient));
+			require(_result[31] != 0, 'ERR_ACCOUNT_NOT_IN_INDEX');
+		}
+
+		(_ok, _result) = store.call(abi.encodeWithSignature("have(address)", _recipient));
 		
 		require(_result[31] == 0, 'ERR_ACCOUNT_USED'); // less conversion than: // require(abi.decode(_result, (bool)) == false, 'ERR_ACCOUNT_USED');
 

@@ -89,6 +89,7 @@ class Test(unittest.TestCase):
             ],
             self.address_token,
             self.address_storage,
+            '0x0000000000000000000000000000000000000000',
             ).transact({'from': self.w3.eth.accounts[0]})
 
         r = self.w3.eth.getTransactionReceipt(tx_hash)

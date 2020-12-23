@@ -29,6 +29,7 @@ argparser.add_argument('-p', '--provider', dest='p', default='http://localhost:8
 argparser.add_argument('-a', '--approvers', dest='a', action='append', type=str, help='Approver account to add')
 argparser.add_argument('-o', '--owner', dest='o', type=str, help='Owner account (provider must have private key)')
 argparser.add_argument('-t', '--token-address', dest='t', required=True, type=str, help='Token to add faucet for')
+argparser.add_argument('-i', '--account-index-address', dest='i', required=False, type=str, help='Accounts index to verify requesting address against (if not specified, any address may use the faucet')
 argparser.add_argument('--abi-dir', dest='abi_dir', type=str, default=data_dir, help='Directory containing bytecode and abi (default: {})'.format(data_dir))
 argparser.add_argument('-v', action='store_true', help='Be verbose')
 args = argparser.parse_args()
@@ -73,7 +74,11 @@ def main():
             approvers.append(a)
             logg.info('add approver {}'.format(a))
 
-    tx_hash = c.constructor(approvers, token_address, store_address).transact()
+    accounts_index_address = '0x0000000000000000000000000000000000000000'
+    if args.i != None:
+        accounts_index_address = args.i
+
+    tx_hash = c.constructor(approvers, token_address, store_address, accounts_index_address).transact()
     rcpt = w3.eth.getTransactionReceipt(tx_hash)
     address = rcpt.contractAddress
     print(address)

@@ -29,6 +29,7 @@ argparser.add_argument('-p', '--provider', dest='p', default='http://localhost:8
 argparser.add_argument('-a', '--approvers', dest='a', action='append', type=str, help='Approver account to add')
 argparser.add_argument('-o', '--owner', dest='o', type=str, help='Owner account (provider must have private key)')
 argparser.add_argument('-t', '--token-address', dest='t', required=True, type=str, help='Token to add faucet for')
+argparser.add_argument('--set-amount', dest='amount', default=0, type=int, help='Initial amount to set. Will be 0 if not set!')
 argparser.add_argument('-i', '--account-index-address', dest='i', required=False, type=str, help='Accounts index to verify requesting address against (if not specified, any address may use the faucet')
 argparser.add_argument('--abi-dir', dest='abi_dir', type=str, default=data_dir, help='Directory containing bytecode and abi (default: {})'.format(data_dir))
 argparser.add_argument('-v', action='store_true', help='Be verbose')
@@ -81,6 +82,15 @@ def main():
     tx_hash = c.constructor(approvers, token_address, store_address, accounts_index_address).transact()
     rcpt = w3.eth.getTransactionReceipt(tx_hash)
     address = rcpt.contractAddress
+
+    if args.amount > 0:
+        c = w3.eth.contract(abi=abi, address=address)
+        tx_hash = c.functions.setAmount(args.amount).transact()
+        logg.debug('setting initial ammount to {} tx_hash {}'.format(args.amount, tx_hash))
+        r = w3.eth.getTransactionReceipt(tx_hash)
+        amount = c.functions.amount().call()
+        logg.info('set initial ammount tx_hash {}'.format(amount))
+
     print(address)
 
 

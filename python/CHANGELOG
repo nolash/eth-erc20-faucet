@@ -1,5 +1,7 @@
+- 0.1.1
+	* Add set amount on deploy executable
 - 0.1.0
-	* Add account index backend for verification of user
+	* Add (optional) account index backend for verification of user
 - 0.0.4
 	* Fix owner flag processing typo
 - 0.0.3

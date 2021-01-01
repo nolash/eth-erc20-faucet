@@ -10,6 +10,7 @@ contract SingleShotFaucet {
 	address public token;
 	address store;
 	address accountsIndex;
+	uint256 zero;
 
 	event FaucetUsed(address indexed _recipient, address indexed _token, uint256 _value);
 	event FaucetFail(address indexed _recipient, address indexed _token, uint256 _value);
@@ -59,5 +60,9 @@ contract SingleShotFaucet {
 			
 		emit FaucetUsed(_recipient, token, amount);
 		return true;
+	}
+
+	function cooldown() public view returns (uint256) {
+		return zero;
 	}
 }

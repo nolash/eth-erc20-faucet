@@ -1,5 +1,6 @@
 - 0.1.2
 	* Remove 'gimme' function
+	* Add 'cooldown' function (noop)
 - 0.1.1
 	* Add set amount on deploy executable
 - 0.1.0

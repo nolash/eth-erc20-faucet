@@ -3,33 +3,39 @@ pragma solidity >=0.6.21;
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 contract SingleShotFaucetStorage {
-	address owner;
-	address new_owner;
+	// EIP 173
+	address public owner;
+	address newOwner;
 
-	mapping (address => bool) public used_accounts;
+	mapping (address => bool) public usedAccounts;
+
+	// EIP 173
+	event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
 	constructor() {
 		owner = msg.sender;
 	}
 
-	function transferOwnership(address _new_owner) external returns (bool) {
+	// EIP 173
+	function transferOwnership(address _newOwner) external {
 		require(msg.sender == owner);
-		new_owner = _new_owner;
-		return true;
+		newOwner = _newOwner;
 	}
 
 	function acceptOwnership() external returns (bool) {
-		require(msg.sender == new_owner);
+		address previousOwner = owner;
+		require(msg.sender == newOwner);
 		owner = msg.sender;
+		emit OwnershipTransferred(previousOwner, owner);
 		return true;
 	}
 
 	function add(address _account) external returns (bool) {
-		used_accounts[_account] = true;
+		usedAccounts[_account] = true;
 		return true;
 	}
 
 	function have(address _account) external view returns (bool) {
-		return used_accounts[_account];
+		return usedAccounts[_account];
 	}
 }

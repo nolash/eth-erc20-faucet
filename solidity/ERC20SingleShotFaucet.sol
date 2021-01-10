@@ -1,4 +1,4 @@
-pragma solidity >=0.6.21;
+pragma solidity >0.6.11;
 
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -10,13 +10,13 @@ contract SingleShotFaucet {
 	address public token;
 	address store;
 	address accountsIndex;
-	uint256 zero;
+	uint256 cooldownDisabled;
 
 	event FaucetUsed(address indexed _recipient, address indexed _token, uint256 _value);
 	event FaucetFail(address indexed _recipient, address indexed _token, uint256 _value);
 	event FaucetAmountChange(address indexed _recipient, uint256 _value);
 
-	constructor(address[] memory _overriders, address _token, address _store, address _accountsIndex)  {
+	constructor(address[] memory _overriders, address _token, address _store, address _accountsIndex) public {
 		owner = msg.sender;
 		overriders[msg.sender] = true;
 		for (uint i = 0; i < _overriders.length; i++) {
@@ -25,6 +25,7 @@ contract SingleShotFaucet {
 		store = _store;
 		token = _token;
 		accountsIndex = _accountsIndex;
+		cooldownDisabled = uint256(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
 	}
 
 	function setAmount(uint256 _amount) public returns (bool) {
@@ -62,7 +63,15 @@ contract SingleShotFaucet {
 		return true;
 	}
 
-	function cooldown() public view returns (uint256) {
-		return zero;
+	function cooldown(address _recipient) public returns (uint256) {
+		bool _ok;
+		bytes memory _result;
+
+		(_ok, _result) = store.call(abi.encodeWithSignature("have(address)", _recipient));
+		if (_ok) {
+			return cooldownDisabled;
+		} else {
+			return 0;
+		}
 	}
 }

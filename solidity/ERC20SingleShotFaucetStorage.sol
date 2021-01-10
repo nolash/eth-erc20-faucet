@@ -1,4 +1,4 @@
-pragma solidity >=0.6.21;
+pragma solidity >0.6.11;
 
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -12,7 +12,7 @@ contract SingleShotFaucetStorage {
 	// EIP 173
 	event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-	constructor() {
+	constructor() public {
 		owner = msg.sender;
 	}
 

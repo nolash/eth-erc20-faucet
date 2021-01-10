@@ -1,3 +1,6 @@
+- 0.2.0-unreleased
+	* Add external signer
+	* Standardize arg flags
 - 0.1.2
 	* Remove 'gimme' function
 	* Add 'cooldown' function (noop)

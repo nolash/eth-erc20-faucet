@@ -8,7 +8,6 @@ import logging
 import json
 import os
 
-logging.basicConfig(level=logging.DEBUG)
 logg = logging.getLogger()
 
 moddir = os.path.dirname(__file__)

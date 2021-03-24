@@ -14,7 +14,7 @@ contract SingleShotFaucet {
 
 	event FaucetUsed(address indexed _recipient, address indexed _token, uint256 _value);
 	event FaucetFail(address indexed _recipient, address indexed _token, uint256 _value);
-	event FaucetAmountChange(address indexed _recipient, uint256 _value);
+	event FaucetAmountChange(uint256 _value);
 
 	constructor(address[] memory _overriders, address _token, address _store, address _accountsIndex) public {
 		owner = msg.sender;
@@ -31,6 +31,7 @@ contract SingleShotFaucet {
 	function setAmount(uint256 _amount) public returns (bool) {
 		require(overriders[msg.sender]);
 		amount = _amount;
+		emit  FaucetAmountChange(_amount);
 		return true;
 	}
 

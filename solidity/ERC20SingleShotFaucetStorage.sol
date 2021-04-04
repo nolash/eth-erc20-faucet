@@ -30,12 +30,12 @@ contract SingleShotFaucetStorage {
 		return true;
 	}
 
+	function have(address _account) external view returns (bool) {
+		return usedAccounts[_account];
+	}
+
 	function add(address _account) external returns (bool) {
 		usedAccounts[_account] = true;
 		return true;
-	}
-
-	function have(address _account) external view returns (bool) {
-		return usedAccounts[_account];
 	}
 }

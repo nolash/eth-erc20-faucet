@@ -89,3 +89,22 @@ class SingleShotFaucet(TxFactory):
     def parse_usable_for(self, v):
         r = abi_decode_single(ABIContractType.UINT256, v)
         return r == 0
+
+ 
+    def token(self, contract_address, sender_address=ZERO_ADDRESS):
+        o = jsonrpc_template()
+        o['method'] = 'eth_call'
+        enc = ABIContractEncoder()
+        enc.method('token')
+        data = add_0x(enc.get())
+        tx = self.template(sender_address, contract_address)
+        tx = self.set_code(tx, data)
+        o['params'].append(self.normalize(tx))
+        return o
+
+   
+    @classmethod
+    def parse_token(self, v):
+        return abi_decode_single(ABIContractType.ADDRESS, v)
+
+

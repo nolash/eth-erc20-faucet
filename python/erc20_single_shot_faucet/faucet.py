@@ -108,3 +108,22 @@ class SingleShotFaucet(TxFactory):
         return abi_decode_single(ABIContractType.ADDRESS, v)
 
 
+    def amount(self, contract_address, block_height=None, sender_address=ZERO_ADDRESS):
+        o = jsonrpc_template()
+        o['method'] = 'eth_call'
+        enc = ABIContractEncoder()
+        enc.method('amount')
+        data = add_0x(enc.get())
+        tx = self.template(sender_address, contract_address)
+        tx = self.set_code(tx, data)
+        o['params'].append(self.normalize(tx))
+
+        if block_height != None:
+            o['params'].append(block_height)
+
+        return o
+
+
+    @classmethod
+    def parse_amount(self, v):
+        return abi_decode_single(ABIContractType.UINT256, v)

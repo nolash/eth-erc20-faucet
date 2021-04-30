@@ -9,6 +9,9 @@ from chainlib.eth.contract import (
         ABIContractEncoder,
         ABIContractType,
         )
+from chainlib.eth.tx import (
+        TxFormat,
+        )
 from chainlib.jsonrpc import jsonrpc_template
 from hexathon import add_0x
 
@@ -16,6 +19,30 @@ logg = logging.getLogger().getChild(__name__)
 
 
 class Faucet(TxFactory):
+
+    def give_to(self, contract_address, sender_address, beneficiary_address, tx_format=TxFormat.JSONRPC):
+        enc = ABIContractEncoder()
+        enc.method('giveTo')
+        enc.typ(ABIContractType.ADDRESS)
+        enc.address(beneficiary_address)
+        data = enc.get()
+        tx = self.template(sender_address, contract_address, use_nonce=True)
+        tx = self.set_code(tx, data)
+        tx = self.finalize(tx, tx_format)
+        return tx
+
+
+    def set_amount(self, contract_address, sender_address, amount, tx_format=TxFormat.JSONRPC):
+        enc = ABIContractEncoder()
+        enc.method('setAmount')
+        enc.typ(ABIContractType.UINT256)
+        enc.uint256(amount)
+        data = enc.get()
+        tx = self.template(sender_address, contract_address, use_nonce=True)
+        tx = self.set_code(tx, data)
+        tx = self.finalize(tx, tx_format)
+        return tx
+
 
     def usable_for(self, contract_address, address, sender_address=ZERO_ADDRESS):
         o = jsonrpc_template()

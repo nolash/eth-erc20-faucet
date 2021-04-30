@@ -18,6 +18,7 @@ from chainlib.eth.contract import (
         abi_decode_single,
         ABIContractType,
         )
+from chainlib.eth.erc20 import ERC20
 from chainlib.eth.nonce import RPCNonceOracle
 from chainlib.eth.constant import ZERO_ADDRESS
 from giftable_erc20_token import GiftableToken
@@ -67,7 +68,47 @@ class TestFaucet(EthTesterCase):
 
 
     def test_basic(self):
-        pass
+        nonce_oracle = RPCNonceOracle(self.accounts[0], self.conn)
+        c = Faucet(self.chain_spec, signer=self.signer, nonce_oracle=nonce_oracle)
+        (tx_hash_hex, o) = c.give_to(self.address, self.accounts[0], self.accounts[1])
+        self.conn.do(o)
+
+        o = receipt(tx_hash_hex)
+        r = self.conn.do(o)
+        self.assertEqual(r['status'], 1)
+
+
+    def test_amount(self):
+        nonce_oracle = RPCNonceOracle(self.accounts[0], self.conn)
+        c = Faucet(self.chain_spec, signer=self.signer, nonce_oracle=nonce_oracle)
+        (tx_hash_hex, o) = c.set_amount(self.address, self.accounts[0], 1024)
+        self.conn.do(o)
+        
+        o = receipt(tx_hash_hex)
+        r = self.conn.do(o)
+        self.assertEqual(r['status'], 1)
+
+        ct = GiftableToken(self.chain_spec, signer=self.signer, nonce_oracle=nonce_oracle)
+        (tx_hash_hex, o) = ct.mint_to(self.token_address, self.accounts[0], self.address, 2048)
+        self.conn.do(o)
+       
+        o = receipt(tx_hash_hex)
+        r = self.conn.do(o)
+        self.assertEqual(r['status'], 1)
+
+        (tx_hash_hex, o) = c.give_to(self.address, self.accounts[0], self.accounts[1])
+        self.conn.do(o)
+
+        o = receipt(tx_hash_hex)
+        r = self.conn.do(o)
+        self.assertEqual(r['status'], 1)
+
+        ct = ERC20(self.chain_spec)
+        o = ct.balance_of(self.token_address, self.accounts[1], sender_address=self.accounts[0])
+        r = self.conn.do(o)
+    
+        amount = ct.parse_balance(r)
+        self.assertEqual(amount, 1024)
 
 
 if __name__ == '__main__':

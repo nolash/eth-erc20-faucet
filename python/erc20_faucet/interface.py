@@ -81,11 +81,11 @@ class Faucet(TxFactory):
         return abi_decode_single(ABIContractType.ADDRESS, v)
 
 
-    def amount(self, contract_address, block_height=None, sender_address=ZERO_ADDRESS):
+    def token_amount(self, contract_address, block_height=None, sender_address=ZERO_ADDRESS):
         o = jsonrpc_template()
         o['method'] = 'eth_call'
         enc = ABIContractEncoder()
-        enc.method('amount')
+        enc.method('tokenAmount')
         data = add_0x(enc.get())
         tx = self.template(sender_address, contract_address)
         tx = self.set_code(tx, data)
@@ -98,5 +98,5 @@ class Faucet(TxFactory):
 
 
     @classmethod
-    def parse_amount(self, v):
+    def parse_token_amount(self, v):
         return abi_decode_single(ABIContractType.UINT256, v)

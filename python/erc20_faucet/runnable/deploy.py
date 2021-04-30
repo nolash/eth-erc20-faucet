@@ -14,7 +14,7 @@ import logging
 # external imports
 import web3
 from crypto_dev_signer.eth.signer import ReferenceSigner as EIP155Signer
-from crypto_dev_signer.keystore import DictKeystore
+from crypto_dev_signer.keystore.dict import DictKeystore
 from crypto_dev_signer.eth.helper import EthTxExecutor
 
 logging.basicConfig(level=logging.WARNING)

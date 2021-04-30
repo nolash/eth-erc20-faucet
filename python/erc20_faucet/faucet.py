@@ -37,11 +37,11 @@ class SingleShotFaucet(Faucet):
     @staticmethod
     def abi(part=None):
         if SingleShotFaucet.__abi == None:
-            f = open(os.path.join(datadir, 'ERC20SingleShotFaucet.json'), 'r')
+            f = open(os.path.join(datadir, 'ERC20Faucet.json'), 'r')
             SingleShotFaucet.__abi = json.load(f)
             f.close()
         if part == 'storage':
-            f = open(os.path.join(datadir, 'ERC20SingleShotFaucetStorage.json'))
+            f = open(os.path.join(datadir, 'ERC20FaucetStorage.json'))
             abi = f.read()
             f.close()
             return abi
@@ -53,11 +53,11 @@ class SingleShotFaucet(Faucet):
     @staticmethod
     def bytecode(part=None):
         if SingleShotFaucet.__bytecode == None:
-            f = open(os.path.join(datadir, 'ERC20SingleShotFaucet.bin'))
+            f = open(os.path.join(datadir, 'ERC20Faucet.bin'))
             SingleShotFaucet.__bytecode = f.read()
             f.close()
         if part == 'storage':
-            f = open(os.path.join(datadir, 'ERC20SingleShotFaucetStorage.bin'))
+            f = open(os.path.join(datadir, 'ERC20FaucetStorage.bin'))
             bytecode = f.read()
             f.close()
             return bytecode

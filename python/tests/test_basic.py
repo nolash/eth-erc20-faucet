@@ -44,6 +44,7 @@ class TestFaucet(EthTesterCase):
         
         o = receipt(r)
         r = self.conn.do(o)
+        self.assertEqual(r['status'], 1)
         self.store_address = to_checksum_address(r['contract_address'])
         logg.debug('store contract {}'.format(self.store_address))
 
@@ -57,12 +58,14 @@ class TestFaucet(EthTesterCase):
         self.token_address = to_checksum_address(r['contract_address'])
         logg.debug('token contract {}'.format(self.store_address))
 
-        (tx_hash, o) = c.constructor(self.accounts[0], self.token_address, self.store_address, ZERO_ADDRESS, self.accounts[1])
+        (tx_hash, o) = c.constructor(self.accounts[0], self.token_address, self.store_address, ZERO_ADDRESS, [self.accounts[1]])
         r = self.conn.do(o)
         logg.debug('faucet deployed with hash {}'.format(r))
 
         o = receipt(r)
         r = self.conn.do(o)
+        self.assertEqual(r['status'], 1)
+
         self.address = to_checksum_address(r['contract_address'])
         logg.debug('faucet contract {}'.format(self.address))
 
@@ -70,7 +73,7 @@ class TestFaucet(EthTesterCase):
     def test_basic(self):
         nonce_oracle = RPCNonceOracle(self.accounts[0], self.conn)
         c = Faucet(self.chain_spec, signer=self.signer, nonce_oracle=nonce_oracle)
-        (tx_hash_hex, o) = c.give_to(self.address, self.accounts[0], self.accounts[1])
+        (tx_hash_hex, o) = c.give_to(self.address, self.accounts[0], self.accounts[2])
         self.conn.do(o)
 
         o = receipt(tx_hash_hex)
@@ -96,7 +99,7 @@ class TestFaucet(EthTesterCase):
         r = self.conn.do(o)
         self.assertEqual(r['status'], 1)
 
-        (tx_hash_hex, o) = c.give_to(self.address, self.accounts[0], self.accounts[1])
+        (tx_hash_hex, o) = c.give_to(self.address, self.accounts[0], self.accounts[2])
         self.conn.do(o)
 
         o = receipt(tx_hash_hex)
@@ -104,7 +107,7 @@ class TestFaucet(EthTesterCase):
         self.assertEqual(r['status'], 1)
 
         ct = ERC20(self.chain_spec)
-        o = ct.balance_of(self.token_address, self.accounts[1], sender_address=self.accounts[0])
+        o = ct.balance_of(self.token_address, self.accounts[2], sender_address=self.accounts[0])
         r = self.conn.do(o)
     
         amount = ct.parse_balance(r)

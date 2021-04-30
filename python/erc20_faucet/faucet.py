@@ -78,12 +78,13 @@ class SingleShotFaucet(Faucet):
     def constructor(self, sender_address, token, store, accounts_index, overrider):
         code = SingleShotFaucet.bytecode()
         enc = ABIContractEncoder()
-        enc.uint256(0x60)
+        enc.uint256(0x80)
         enc.address(token)
         enc.address(store)
         enc.address(accounts_index)
-        enc.uint256(0x01)
-        enc.address(overrider)
+        enc.uint256(len(overrider))
+        for r in overrider:
+            enc.address(r)
         code += enc.get()
         tx = self.template(sender_address, None, use_nonce=True)
         tx = self.set_code(tx, code)

@@ -4,3 +4,5 @@ gmon.out
 *.egg-info
 build/
 dist/
+solidity/*.bin
+solidity/*.json

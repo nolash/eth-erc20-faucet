@@ -24,8 +24,8 @@ from chainlib.eth.constant import ZERO_ADDRESS
 from giftable_erc20_token import GiftableToken
 
 # local imports
-from erc20_single_shot_faucet import Faucet
-from erc20_single_shot_faucet.faucet import SingleShotFaucet
+from erc20_faucet import Faucet
+from erc20_faucet.faucet import SingleShotFaucet
 
 logging.basicConfig(level=logging.DEBUG)
 logg = logging.getLogger()

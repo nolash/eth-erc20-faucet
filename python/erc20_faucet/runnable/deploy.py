@@ -11,7 +11,7 @@ import json
 import argparse
 import logging
 
-# third-party imports
+# external imports
 import web3
 from crypto_dev_signer.eth.signer import ReferenceSigner as EIP155Signer
 from crypto_dev_signer.keystore import DictKeystore

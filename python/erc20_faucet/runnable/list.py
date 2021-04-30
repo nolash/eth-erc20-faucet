@@ -12,7 +12,7 @@ import json
 import argparse
 import logging
 
-# third-party imports
+# external imports
 from crypto_dev_signer.eth.signer import ReferenceSigner as EIP155Signer
 from crypto_dev_signer.keystore.dict import DictKeystore
 from crypto_dev_signer.eth.helper import EthTxExecutor
@@ -25,7 +25,7 @@ from chainlib.eth.constant import ZERO_CONTENT
 from chainlib.error import JSONRPCException
 
 # local imports
-from erc20_single_shot_faucet import SingleShotFaucet
+from erc20_faucet import Faucet
 
 logging.basicConfig(level=logging.WARNING)
 logg = logging.getLogger()
@@ -75,7 +75,7 @@ def element(ifc, address, fmt=default_format, w=sys.stdout):
 
 
 def main():
-    c = SingleShotFaucet(chain_spec)
+    c = Faucet(chain_spec)
     element(c, address, fmt=fmt, w=sys.stdout)
 
 

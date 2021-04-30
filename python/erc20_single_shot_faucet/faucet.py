@@ -19,13 +19,16 @@ from chainlib.eth.contract import (
 from chainlib.jsonrpc import jsonrpc_template
 from hexathon import add_0x
 
-logg = logging.getLogger()
+# local imports
+from .interface import Faucet
+
+logg = logging.getLogger().getChild(__name__)
 
 moddir = os.path.dirname(__file__)
 datadir = os.path.join(moddir, 'data')
 
 
-class SingleShotFaucet(TxFactory):
+class SingleShotFaucet(Faucet):
 
     __abi = None
     __bytecode = None
@@ -71,59 +74,17 @@ class SingleShotFaucet(TxFactory):
         return self.build(tx)
 
 
-    def usable_for(self, contract_address, address, sender_address=ZERO_ADDRESS):
-        o = jsonrpc_template()
-        o['method'] = 'eth_call'
+    # TODO: allow multiple overriders
+    def constructor(self, sender_address, token, store, accounts_index, overrider):
+        code = SingleShotFaucet.bytecode()
         enc = ABIContractEncoder()
-        enc.method('cooldown')
-        enc.typ(ABIContractType.ADDRESS)
-        enc.address(address)
-        data = add_0x(enc.get())
-        tx = self.template(sender_address, contract_address)
-        tx = self.set_code(tx, data)
-        o['params'].append(self.normalize(tx))
-        return o
-
-
-    @classmethod
-    def parse_usable_for(self, v):
-        r = abi_decode_single(ABIContractType.UINT256, v)
-        return r == 0
-
- 
-    def token(self, contract_address, sender_address=ZERO_ADDRESS):
-        o = jsonrpc_template()
-        o['method'] = 'eth_call'
-        enc = ABIContractEncoder()
-        enc.method('token')
-        data = add_0x(enc.get())
-        tx = self.template(sender_address, contract_address)
-        tx = self.set_code(tx, data)
-        o['params'].append(self.normalize(tx))
-        return o
-
-   
-    @classmethod
-    def parse_token(self, v):
-        return abi_decode_single(ABIContractType.ADDRESS, v)
-
-
-    def amount(self, contract_address, block_height=None, sender_address=ZERO_ADDRESS):
-        o = jsonrpc_template()
-        o['method'] = 'eth_call'
-        enc = ABIContractEncoder()
-        enc.method('amount')
-        data = add_0x(enc.get())
-        tx = self.template(sender_address, contract_address)
-        tx = self.set_code(tx, data)
-        o['params'].append(self.normalize(tx))
-
-        if block_height != None:
-            o['params'].append(block_height)
-
-        return o
-
-
-    @classmethod
-    def parse_amount(self, v):
-        return abi_decode_single(ABIContractType.UINT256, v)
+        enc.uint256(0x60)
+        enc.address(token)
+        enc.address(store)
+        enc.address(accounts_index)
+        enc.uint256(0x01)
+        enc.address(overrider)
+        code += enc.get()
+        tx = self.template(sender_address, None, use_nonce=True)
+        tx = self.set_code(tx, code)
+        return self.build(tx)

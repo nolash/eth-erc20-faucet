@@ -17,6 +17,8 @@ contract SingleShotFaucetStorage {
 
 	constructor() public {
 		owner = msg.sender;
+		entry.push(address(0));
+		usedAccounts[address(0)] = 0;
 	}
 
 	// Implements EIP 173
@@ -36,18 +38,22 @@ contract SingleShotFaucetStorage {
 
 	// Implements AccountsIndex
 	function have(address _account) external view returns (bool) {
-		return usedAccounts[_account];
+		return usedAccounts[_account] > 0;
 	}
 
 	// Implements AccountsIndex
 	function add(address _account) external returns (bool) {
-		usedAccounts[_account] = true;
-		emit AccountAdded(_account, );
+		uint256 l;
+
+		l = entry.length;
+		entry.push(_account);
+		usedAccounts[_account] = l;
+		emit AddressAdded(_account, l);
 		return true;
 	}
 
 	// Implements EIP165
-	function supportsInterface(bytes4 _sum) {
+	function supportsInterface(bytes4 _sum) public pure returns (bool) {
 		if (_sum == 0xcbdb05c7) { // AccountsIndex
 			return true;
 		}
@@ -60,5 +66,6 @@ contract SingleShotFaucetStorage {
 		if (_sum == 0x37a47be4) { // OwnedAccepter
 			return true;
 		}
+		return false;
 	}
 }

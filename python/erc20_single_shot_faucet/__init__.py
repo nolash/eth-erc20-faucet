@@ -3,4 +3,4 @@
 # File-version: 1
 # Description: Python interface to abi and bin files for faucet contracts
 
-from .faucet import SingleShotFaucet
+from .interface import Faucet

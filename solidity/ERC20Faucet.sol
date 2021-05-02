@@ -75,4 +75,8 @@ contract SingleShotFaucet {
 			return 0;
 		}
 	}
+
+	function tokenAmount() public view returns (uint256) {
+		return amount;
+	}
 }

@@ -1,7 +1,9 @@
 # standard imports
 import logging
+import copy
 
 # external imports
+import sha3
 from chainlib.eth.tx import TxFactory
 from chainlib.eth.constant import ZERO_ADDRESS
 from chainlib.eth.contract import (
@@ -13,12 +15,57 @@ from chainlib.eth.tx import (
         TxFormat,
         )
 from chainlib.jsonrpc import jsonrpc_template
-from hexathon import add_0x
+from hexathon import (
+        add_0x,
+        strip_0x,
+        )
+from potaahto.symbols import snake_and_camel_s
 
 logg = logging.getLogger().getChild(__name__)
 
 
 class Faucet(TxFactory):
+
+    __signatures = {
+        'give_to': 'giveTo(address)',
+        'token_amount': 'tokenAmount()',
+        'token': 'token()',
+            }
+    __signatures_reverse = None
+
+
+    @classmethod
+    def method_for(self, b):
+        if type(b).__name__ == 'str':
+            b = bytes.fromhex(strip_0x(b))
+        if len(b) < 4:
+            return None
+        return self.__signatures_reverse.get(b[:4])
+
+
+    @classmethod
+    def signature_for(self, s):
+        return self.__signatures.get(s)
+
+
+    @classmethod
+    def build_signatures(cls):
+        if cls.__signatures_reverse != None:
+            return
+        cls.__signatures_reverse = {}
+
+        for (k, v) in copy.copy(Faucet.__signatures).items():
+            (x, y) = snake_and_camel_s(k)
+            h = sha3.keccak_256()
+            h.update(v.encode('utf-8'))
+            z = h.digest()
+            sig = z[:4]
+            Faucet.__signatures[x] = sig
+            Faucet.__signatures[y] = sig
+            Faucet.__signatures_reverse[sig] = x
+
+        return True
+
 
     def give_to(self, contract_address, sender_address, beneficiary_address, tx_format=TxFormat.JSONRPC):
         enc = ABIContractEncoder()
@@ -100,3 +147,6 @@ class Faucet(TxFactory):
     @classmethod
     def parse_token_amount(self, v):
         return abi_decode_single(ABIContractType.UINT256, v)
+
+
+Faucet.build_signatures()

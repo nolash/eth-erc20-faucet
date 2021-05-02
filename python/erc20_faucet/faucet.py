@@ -76,6 +76,8 @@ class SingleShotFaucet(Faucet):
 
     # TODO: allow multiple overriders
     def constructor(self, sender_address, token, store, accounts_index, overrider):
+        if accounts_index == None:
+            accounts_index = ZERO_ADDRESS
         code = SingleShotFaucet.bytecode()
         enc = ABIContractEncoder()
         enc.uint256(0x80)

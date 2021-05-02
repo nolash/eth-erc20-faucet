@@ -114,5 +114,15 @@ class TestFaucet(EthTesterCase):
         self.assertEqual(amount, 1024)
 
 
+    def test_signatures(self):
+        snake = Faucet(self.chain_spec).signature_for('give_to')
+        camel = Faucet(self.chain_spec).signature_for('giveTo')
+        self.assertEqual(snake, camel)
+        method = Faucet(self.chain_spec).method_for(snake)
+        self.assertEqual(method, 'give_to')
+        hx = snake.hex().ljust(64+8, 'f')
+        method = Faucet(self.chain_spec).method_for(hx)
+        self.assertEqual(method, 'give_to')
+
 if __name__ == '__main__':
     unittest.main()

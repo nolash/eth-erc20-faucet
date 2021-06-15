@@ -15,7 +15,6 @@ import logging
 # external imports
 from crypto_dev_signer.eth.signer import ReferenceSigner as EIP155Signer
 from crypto_dev_signer.keystore.dict import DictKeystore
-from crypto_dev_signer.eth.helper import EthTxExecutor
 from chainlib.chain import ChainSpec
 from chainlib.eth.nonce import RPCNonceOracle
 from chainlib.eth.gas import RPCGasOracle

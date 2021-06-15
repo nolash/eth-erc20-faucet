@@ -67,6 +67,11 @@ class SingleShotFaucet(Faucet):
         return SingleShotFaucet.__bytecode
 
 
+    @staticmethod
+    def gas(code=None):
+        return 2000000
+
+
     def store_constructor(self, sender_address):
         code = SingleShotFaucet.bytecode(part='storage')
         tx = self.template(sender_address, None, use_nonce=True)

@@ -9,12 +9,14 @@ from chainlib.eth.constant import ZERO_ADDRESS
 from chainlib.eth.contract import (
         abi_decode_single,
         ABIContractEncoder,
+        ABIContractDecoder,
         ABIContractType,
         )
 from chainlib.eth.tx import (
         TxFormat,
         )
 from chainlib.jsonrpc import jsonrpc_template
+from chainlib.eth.error import RequestMismatchException
 from hexathon import (
         add_0x,
         strip_0x,
@@ -77,6 +79,28 @@ class Faucet(TxFactory):
         tx = self.set_code(tx, data)
         tx = self.finalize(tx, tx_format)
         return tx
+
+
+    @classmethod
+    def parse_give_to_request(self, v):
+        v = strip_0x(v)
+        cursor = 0
+        enc = ABIContractEncoder()
+        enc.method('giveTo')
+        enc.typ(ABIContractType.ADDRESS)
+        r = enc.get()
+        l = len(r)
+        m = v[:l]
+        if m != r:
+            logg.error('method mismatch, expected {}, got {}'.format(r, m))
+            raise RequestMismatchException(v)
+        cursor += l
+
+        dec = ABIContractDecoder()
+        dec.typ(ABIContractType.ADDRESS)
+        dec.val(v[cursor:cursor+64])
+        r = dec.decode()
+        return r 
 
 
     def set_amount(self, contract_address, sender_address, amount, tx_format=TxFormat.JSONRPC):

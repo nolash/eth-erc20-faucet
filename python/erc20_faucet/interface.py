@@ -15,7 +15,7 @@ from chainlib.eth.contract import (
 from chainlib.eth.tx import (
         TxFormat,
         )
-from chainlib.jsonrpc import jsonrpc_template
+from chainlib.jsonrpc import JSONRPCRequest
 from chainlib.eth.error import RequestMismatchException
 from hexathon import (
         add_0x,
@@ -115,8 +115,9 @@ class Faucet(TxFactory):
         return tx
 
 
-    def usable_for(self, contract_address, address, sender_address=ZERO_ADDRESS):
-        o = jsonrpc_template()
+    def usable_for(self, contract_address, address, sender_address=ZERO_ADDRESS, id_generator=None):
+        j = JSONRPCRequest(id_generator)
+        o = j.template()
         o['method'] = 'eth_call'
         enc = ABIContractEncoder()
         enc.method('cooldown')
@@ -126,6 +127,7 @@ class Faucet(TxFactory):
         tx = self.template(sender_address, contract_address)
         tx = self.set_code(tx, data)
         o['params'].append(self.normalize(tx))
+        o = j.finalize(o)
         return o
 
 
@@ -135,8 +137,9 @@ class Faucet(TxFactory):
         return r == 0
 
  
-    def token(self, contract_address, sender_address=ZERO_ADDRESS):
-        o = jsonrpc_template()
+    def token(self, contract_address, sender_address=ZERO_ADDRESS, id_generator=None):
+        j = JSONRPCRequest(id_generator)
+        o = j.template()
         o['method'] = 'eth_call'
         enc = ABIContractEncoder()
         enc.method('token')
@@ -144,6 +147,7 @@ class Faucet(TxFactory):
         tx = self.template(sender_address, contract_address)
         tx = self.set_code(tx, data)
         o['params'].append(self.normalize(tx))
+        o = j.finalize(o)
         return o
 
    
@@ -152,8 +156,9 @@ class Faucet(TxFactory):
         return abi_decode_single(ABIContractType.ADDRESS, v)
 
 
-    def token_amount(self, contract_address, block_height=None, sender_address=ZERO_ADDRESS):
-        o = jsonrpc_template()
+    def token_amount(self, contract_address, block_height=None, sender_address=ZERO_ADDRESS, id_generator=None):
+        j = JSONRPCRequest(id_generator)
+        o = j.template()
         o['method'] = 'eth_call'
         enc = ABIContractEncoder()
         enc.method('tokenAmount')
@@ -164,7 +169,7 @@ class Faucet(TxFactory):
 
         if block_height != None:
             o['params'].append(block_height)
-
+        o = j.finalize(o)
         return o
 
 

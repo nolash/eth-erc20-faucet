@@ -18,7 +18,7 @@ from chainlib.eth.contract import (
         abi_decode_single,
         ABIContractType,
         )
-from chainlib.eth.erc20 import ERC20
+from eth_erc20 import ERC20
 from chainlib.eth.nonce import RPCNonceOracle
 from chainlib.eth.constant import ZERO_ADDRESS
 from giftable_erc20_token import GiftableToken

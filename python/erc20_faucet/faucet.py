@@ -16,7 +16,6 @@ from chainlib.eth.contract import (
         ABIContractEncoder,
         ABIContractType,
         )
-from chainlib.jsonrpc import jsonrpc_template
 from hexathon import add_0x
 
 # local imports

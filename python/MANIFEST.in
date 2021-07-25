@@ -1,1 +1,1 @@
-include **/data/*Faucet*.json **/data/*Faucet*.bin
+include **/data/*Faucet*.json **/data/*Faucet*.bin *requirements.txt

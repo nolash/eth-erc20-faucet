@@ -69,7 +69,10 @@ contract SingleShotFaucet {
 		bytes memory _result;
 
 		(_ok, _result) = store.call(abi.encodeWithSignature("have(address)", _recipient));
-		if (_ok) {
+
+		require(_ok, 'ERR_STORE_FAIL');
+
+		if (_result[31] == 0x01) {
 			return cooldownDisabled;
 		} else {
 			return 0;

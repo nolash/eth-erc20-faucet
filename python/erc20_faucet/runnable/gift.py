@@ -1,4 +1,4 @@
-"""Query faucet store
+"""Set identifier value on contract registry
 
 .. moduleauthor:: Louis Holbrook <dev@holbrook.no>
 .. pgp:: 0826EDA1702D1E87C6E2875121D2E7BB88C2A746 
@@ -18,7 +18,6 @@ from chainlib.chain import ChainSpec
 from chainlib.eth.connection import EthHTTPConnection
 from chainlib.eth.tx import receipt
 from chainlib.eth.constant import ZERO_CONTENT
-from chainlib.error import JSONRPCException
 from chainlib.eth.address import to_checksum_address
 from hexathon import (
         add_0x,
@@ -32,10 +31,9 @@ from erc20_faucet.faucet import SingleShotFaucet
 logging.basicConfig(level=logging.WARNING)
 logg = logging.getLogger()
 
-
 arg_flags = chainlib.eth.cli.argflag_std_write | chainlib.eth.cli.Flag.EXEC
 argparser = chainlib.eth.cli.ArgumentParser(arg_flags)
-argparser.add_positional('address', required=False, type=str, help='Check only whether given address has been used')
+argparser.add_positional('address', type=str, help='Contract address to invoke faucet for')
 args = argparser.parse_args()
 
 extra_args = {
@@ -50,32 +48,43 @@ rpc = chainlib.eth.cli.Rpc(wallet=wallet)
 conn = rpc.connect_by_config(config)
 
 chain_spec = ChainSpec.from_chain_str(config.get('CHAIN_SPEC'))
-
-
-def out_element(e, conn, w=sys.stdout):
-    w.write(str(e[1]) + '\n')
-
-
-def element(ifc, conn, faucet_address, address, w=sys.stdout):
-    o = ifc.usable_for(faucet_address, address)
-    r =  conn.do(o)
-    usable = ifc.parse_usable_for(r)
-    if usable:
-        out_element((0, address), conn, w)
-
+   
 
 def main():
+
+    signer = rpc.get_signer()
+    signer_address = rpc.get_sender_address()
+
+    gas_oracle = rpc.get_gas_oracle()
+    nonce_oracle = rpc.get_nonce_oracle()
+
+    c = Faucet(chain_spec, signer=signer, nonce_oracle=nonce_oracle, gas_oracle=gas_oracle)
+
     faucet_address = to_checksum_address(config.get('_EXEC_ADDRESS'))
     if not config.true('_UNSAFE') and faucet_address != add_0x(config.get('_EXEC_ADDRESS')):
         raise ValueError('invalid checksum address for faucet')
 
-    address = to_checksum_address(config.get('_EXEC_ADDRESS'))
+    address = config.get('_ADDRESS')
+    if address == None:
+        address = signer_address
+    else:
+        address = to_checksum_address(address)
     if not config.true('_UNSAFE') and address != add_0x(config.get('_EXEC_ADDRESS')):
         raise ValueError('invalid checksum address for faucet')
 
+    (tx_hash_hex, o) = c.give_to(faucet_address, signer_address, address)
 
-    c = Faucet(chain_spec)
-    element(c, conn, faucet_address, address, w=sys.stdout)
+    if config.get('_RPC_SEND'):
+        conn.do(o)
+        if config.get('_WAIT'):
+            r = conn.wait(tx_hash_hex)
+            if r['status'] == 0:
+                sys.stderr.write('EVM revert while deploying contract. Wish I had more to tell you')
+                sys.exit(1)
+
+        print(tx_hash_hex)
+    else:
+        print(o)
 
 
 if __name__ == '__main__':

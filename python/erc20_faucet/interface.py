@@ -17,6 +17,7 @@ from chainlib.eth.tx import (
         )
 from chainlib.jsonrpc import JSONRPCRequest
 from chainlib.eth.error import RequestMismatchException
+from chainlib.eth.jsonrpc import to_blockheight_param
 from hexathon import (
         add_0x,
         strip_0x,
@@ -137,7 +138,7 @@ class Faucet(TxFactory):
         return r == 0
 
  
-    def token(self, contract_address, sender_address=ZERO_ADDRESS, id_generator=None):
+    def token(self, contract_address, sender_address=ZERO_ADDRESS, height=None, id_generator=None):
         j = JSONRPCRequest(id_generator)
         o = j.template()
         o['method'] = 'eth_call'
@@ -147,6 +148,8 @@ class Faucet(TxFactory):
         tx = self.template(sender_address, contract_address)
         tx = self.set_code(tx, data)
         o['params'].append(self.normalize(tx))
+        height = to_blockheight_param(height)
+        o['params'].append(height)
         o = j.finalize(o)
         return o
 
@@ -156,7 +159,7 @@ class Faucet(TxFactory):
         return abi_decode_single(ABIContractType.ADDRESS, v)
 
 
-    def token_amount(self, contract_address, block_height=None, sender_address=ZERO_ADDRESS, id_generator=None):
+    def token_amount(self, contract_address, height=None, sender_address=ZERO_ADDRESS, id_generator=None):
         j = JSONRPCRequest(id_generator)
         o = j.template()
         o['method'] = 'eth_call'
@@ -166,9 +169,8 @@ class Faucet(TxFactory):
         tx = self.template(sender_address, contract_address)
         tx = self.set_code(tx, data)
         o['params'].append(self.normalize(tx))
-
-        if block_height != None:
-            o['params'].append(block_height)
+        height = to_blockheight_param(height)
+        o['params'].append(height)
         o = j.finalize(o)
         return o
 

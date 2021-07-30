@@ -13,24 +13,19 @@ import argparse
 import logging
 
 # external imports
-from crypto_dev_signer.eth.signer import ReferenceSigner as EIP155Signer
-from crypto_dev_signer.keystore.dict import DictKeystore
+import chainlib.eth.cli
 from chainlib.chain import ChainSpec
-from chainlib.eth.nonce import (
-        RPCNonceOracle,
-        OverrideNonceOracle,
-        )
-from chainlib.eth.gas import (
-        RPCGasOracle,
-        OverrideGasOracle,
-        )
 from chainlib.eth.connection import EthHTTPConnection
 from chainlib.eth.tx import (
         receipt,
         TxFactory,
         )
 from chainlib.eth.constant import ZERO_ADDRESS
-from erc20_faucet.faucet import SingleShotFaucet 
+from chainlib.eth.address import to_checksum_address
+from hexathon import (
+        add_0x,
+        strip_0x,
+        )
 
 # local imports
 from erc20_faucet.faucet import SingleShotFaucet
@@ -38,108 +33,97 @@ from erc20_faucet.faucet import SingleShotFaucet
 logging.basicConfig(level=logging.WARNING)
 logg = logging.getLogger()
 
-script_dir = os.path.dirname(__file__)
-data_dir = os.path.join(script_dir, '..', 'data')
-
-default_eth_provider = os.environ.get('ETH_PROVIDER', 'http://localhost:8545')
-
-argparser = argparse.ArgumentParser()
-argparser.add_argument('-p', '--provider', dest='p', default=default_eth_provider, type=str, help='RPC provider url (http only)')
-argparser.add_argument('-w', action='store_true', help='Wait for the last transaction to be confirmed')
-argparser.add_argument('-ww', action='store_true', help='Wait for every transaction to be confirmed')
-argparser.add_argument('-i', '--chain-spec', dest='i', type=str, default='evm:ethereum:1', help='Chain specification string')
-argparser.add_argument('-y', '--key-file', dest='y', type=str, help='Ethereum keystore file to use for signing')
-argparser.add_argument('-v', action='store_true', help='Be verbose')
-argparser.add_argument('-vv', action='store_true', help='Be more verbose')
-argparser.add_argument('--gas-price', type=int, dest='gas_price', help='Override gas price')
-argparser.add_argument('-d', action='store_true', help='Dump RPC calls to terminal and do not send')
-argparser.add_argument('--nonce', type=int, help='Override transaction nonce')
-argparser.add_argument('--overrider-address', type=str, dest='overrider_address', help='Overrider address')
-argparser.add_argument('--env-prefix', default=os.environ.get('CONFINI_ENV_PREFIX'), dest='env_prefix', type=str, help='environment prefix for variables to overwrite configuration')
-argparser.add_argument('--account-index-address', type=str, dest='account_index_address', help='Account index contract address')
+arg_flags = chainlib.eth.cli.argflag_std_write
+argparser = chainlib.eth.cli.ArgumentParser(arg_flags)
+argparser.add_argument('--overrider-address', type=str, dest='overrider_address', default=ZERO_ADDRESS, help='Overrider address')
+argparser.add_argument('--account-index-address', type=str, dest='account_index_address', default=ZERO_ADDRESS, help='Account index contract address')
+argparser.add_argument('--store-address', type=str, dest='store_address', help='Faucet store address')
 argparser.add_argument('token_address', type=str, help='Mintable token address')
 args = argparser.parse_args()
 
-if args.vv:
-    logg.setLevel(logging.DEBUG)
-elif args.v:
-    logg.setLevel(logging.INFO)
+extra_args = {
+    'overrider_address': None,
+    'account_index_address': None,
+    'store_address': None,
+    'token_address': None,
+    }
+config = chainlib.eth.cli.Config.from_args(args, arg_flags, extra_args=extra_args, default_fee_limit=SingleShotFaucet.gas())
 
-block_last = args.w
-block_all = args.ww
+wallet = chainlib.eth.cli.Wallet()
+wallet.from_config(config)
 
-passphrase_env = 'ETH_PASSPHRASE'
-if args.env_prefix != None:
-    passphrase_env = args.env_prefix + '_' + passphrase_env
-passphrase = os.environ.get(passphrase_env)
-if passphrase == None:
-    logg.warning('no passphrase given')
-    passphrase=''
+rpc = chainlib.eth.cli.Rpc(wallet=wallet)
+conn = rpc.connect_by_config(config)
 
-signer_address = None
-keystore = DictKeystore()
-if args.y != None:
-    logg.debug('loading keystore file {}'.format(args.y))
-    signer_address = keystore.import_keystore_file(args.y, password=passphrase)
-    logg.debug('now have key for signer address {}'.format(signer_address))
-signer = EIP155Signer(keystore)
-
-chain_spec = ChainSpec.from_chain_str(args.i)
-
-rpc = EthHTTPConnection(args.p)
-nonce_oracle = None
-if args.nonce != None:
-    nonce_oracle = OverrideNonceOracle(signer_address, args.nonce)
-else:
-    nonce_oracle = RPCNonceOracle(signer_address, rpc)
-
-gas_oracle = None
-if args.gas_price !=None:
-    gas_oracle = OverrideGasOracle(price=args.gas_price, conn=rpc, code_callback=SingleShotFaucet.gas)
-else:
-    gas_oracle = RPCGasOracle(rpc, code_callback=SingleShotFaucet.gas)
-
-dummy = args.d
-
-token_address = args.token_address
-overrider_address = signer_address
-if args.overrider_address != None:
-    overrider_address = args.overrider_address
-account_index_address = args.account_index_address
-if account_index_address == None:
-    account_index_address = ZERO_ADDRESS
+chain_spec = ChainSpec.from_chain_str(config.get('CHAIN_SPEC'))
+args = argparser.parse_args()
 
 
 def main():
-    c = SingleShotFaucet(chain_spec, signer=signer, nonce_oracle=nonce_oracle, gas_oracle=gas_oracle)
-    (tx_hash_hex, o) = c.store_constructor(signer_address)
-    if dummy:
-        print(tx_hash_hex)
-        print(o)
-    else:
-        rpc.do(o)
-        r = rpc.wait(tx_hash_hex)
-        if r['status'] == 0:
-            sys.stderr.write('EVM revert while deploying contract. Wish I had more to tell you')
-            sys.exit(1)
-        # TODO: pass through translator for keys (evm tester uses underscore instead of camelcase)
-        store_address = r['contractAddress']
-        logg.info('deployed faucet store on {}'.format(store_address))
+    signer = rpc.get_signer()
+    signer_address = rpc.get_sender_address()
 
+    gas_oracle = rpc.get_gas_oracle()
+    nonce_oracle = rpc.get_nonce_oracle()
+
+    c = SingleShotFaucet(chain_spec, signer=signer, nonce_oracle=nonce_oracle, gas_oracle=gas_oracle)
+
+    store_address = None
+    try:
+        store_address = to_checksum_address(config.get('_STORE_ADDRESS'))
+        if not config.true('_UNSAFE') and store_address != add_0x(config.get('_STORE_ADDRESS')):
+            raise ValueError('invalid checksum address for store')
+        logg.debug('using store address {}'.format(store_address))
+    except TypeError:
+        pass
+
+    account_index_address = to_checksum_address(config.get('_ACCOUNT_INDEX_ADDRESS'))
+    if not config.true('_UNSAFE') and account_index_address != add_0x(config.get('_ACCOUNT_INDEX_ADDRESS')):
+        raise ValueError('invalid checksum address for account index address')
+
+    token_address = None
+    try:
+        token_address = to_checksum_address(config.get('_TOKEN_ADDRESS'))
+        if not config.true('_UNSAFE') and token_address != add_0x(config.get('_TOKEN_ADDRESS')):
+            raise ValueError('invalid checksum address for token address')
+    except TypeError:
+        pass
+
+    overrider_address = to_checksum_address(config.get('_OVERRIDER_ADDRESS'))
+    if not config.true('_UNSAFE') and overrider_address != add_0x(config.get('_OVERRIDER_ADDRESS')):
+        raise ValueError('invalid checksum address for overrider address')
+
+
+    if store_address == None:
+        (tx_hash_hex, o) = c.store_constructor(signer_address)
+        if not config.get('_WAIT'):
+            print(o)
+        else:
+            conn.do(o)
+            r = conn.wait(tx_hash_hex)
+            if r['status'] == 0:
+                sys.stderr.write('EVM revert while deploying contract. Wish I had more to tell you')
+                sys.exit(1)
+            # TODO: pass through translator for keys (evm tester uses underscore instead of camelcase)
+            store_address = r['contractAddress']
+            logg.info('deployed faucet store on {}'.format(store_address))
+            print(store_address)
+
+    if store_address != None:
         c = SingleShotFaucet(chain_spec, signer=signer, gas_oracle=gas_oracle, nonce_oracle=nonce_oracle)
         (tx_hash_hex, o) = c.constructor(signer_address, token_address, store_address, account_index_address, [overrider_address])
-        rpc.do(o)
-        r = rpc.wait(tx_hash_hex)
-        if r['status'] == 0:
-            sys.stderr.write('EVM revert while deploying contract. Wish I had more to tell you')
-            sys.exit(1)
-        # TODO: pass through translator for keys (evm tester uses underscore instead of camelcase)
-        address = r['contractAddress']
+        conn.do(o)
+        if config.get('_WAIT'):
+            r = conn.wait(tx_hash_hex)
+            if r['status'] == 0:
+                sys.stderr.write('EVM revert while deploying contract. Wish I had more to tell you')
+                sys.exit(1)
+            # TODO: pass through translator for keys (evm tester uses underscore instead of camelcase)
+            address = r['contractAddress']
 
-        if block_last:
-            rpc.wait(tx_hash_hex)
-
-        print(address)
+            print(address)
+        else:
+            print(tx_hash_hex)
 
 
 if __name__ == '__main__':

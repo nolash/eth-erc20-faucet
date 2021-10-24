@@ -5,11 +5,12 @@ pragma solidity >0.6.11;
 contract SingleShotFaucet {
 
 	address owner;
-	mapping( address => bool) overriders;
-	uint256 public amount;
-	address public token;
+	mapping( address => bool) overriders; // TODO replace with writers
+	uint256 amount;
+	address public token; // Faucet
 	address store;
 	address accountsIndex;
+	mapping(address => bool) writers;
 	uint256 cooldownDisabled;
 
 	event FaucetUsed(address indexed _recipient, address indexed _token, uint256 _value);
@@ -28,6 +29,7 @@ contract SingleShotFaucet {
 		cooldownDisabled = uint256(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
 	}
 
+	// Implements Faucet
 	function setAmount(uint256 _amount) public returns (bool) {
 		require(overriders[msg.sender]);
 		amount = _amount;
@@ -35,6 +37,7 @@ contract SingleShotFaucet {
 		return true;
 	}
 
+	// Implements Faucet
 	function giveTo(address _recipient) public returns (bool) {
 		require(!overriders[_recipient], 'ERR_ACCESS');
 	
@@ -64,6 +67,7 @@ contract SingleShotFaucet {
 		return true;
 	}
 
+	// Implements Faucet
 	function cooldown(address _recipient) public returns (uint256) {
 		bool _ok;
 		bytes memory _result;
@@ -79,7 +83,36 @@ contract SingleShotFaucet {
 		}
 	}
 
+	// Implements Faucet
 	function tokenAmount() public view returns (uint256) {
 		return amount;
+	}
+
+	// Implements Writer
+	function addWriter(address _writer) public returns (bool) {
+		require(owner == msg.sender);
+		writers[_writer] = true;
+		return true;
+	}
+
+	// Implements Writer
+	function deleteWriter(address _writer) public returns (bool) {
+		require(owner == msg.sender);
+		delete writers[_writer];
+		return true;
+	}
+
+	// Implements EIP165
+	function supportsInterface(bytes4 _sum) public returns (bool) {
+		if (_sum == 0x01ffc9a7) { // EIP165
+			return true;
+		}
+		if (_sum == 0xde344547) { // Faucet
+			return true;
+		}
+		if (_sum == 0x80c84bd6) { // Writer
+			return true;
+		}
+		return false;
 	}
 }

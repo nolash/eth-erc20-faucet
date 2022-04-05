@@ -93,7 +93,6 @@ class Faucet(TxFactory):
         l = len(r)
         m = v[:l]
         if m != r:
-            logg.error('method mismatch, expected {}, got {}'.format(r, m))
             raise RequestMismatchException(v)
         cursor += l
 

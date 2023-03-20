@@ -17,7 +17,7 @@ contract SingleShotFaucet {
 	event FaucetFail(address indexed _recipient, address indexed _token, uint256 _value);
 	event FaucetAmountChange(uint256 _value);
 
-	constructor(address[] memory _overriders, address _token, address _store, address _accountsIndex) public {
+	constructor(address[] memory _overriders, address _token, address _store, address _accountsIndex) {
 		owner = msg.sender;
 		overriders[msg.sender] = true;
 		for (uint i = 0; i < _overriders.length; i++) {
@@ -67,6 +67,10 @@ contract SingleShotFaucet {
 		return true;
 	}
 
+	function gimme() public returns (bool) {
+		return giveTo(msg.sender);
+	}
+
 	// Implements Faucet
 	function cooldown(address _recipient) public returns (uint256) {
 		bool _ok;
@@ -103,7 +107,7 @@ contract SingleShotFaucet {
 	}
 
 	// Implements EIP165
-	function supportsInterface(bytes4 _sum) public returns (bool) {
+	function supportsInterface(bytes4 _sum) public pure returns (bool) {
 		if (_sum == 0x01ffc9a7) { // EIP165
 			return true;
 		}

@@ -82,6 +82,16 @@ class Faucet(TxFactory):
         return tx
 
 
+    def gimme(self, contract_address, sender_address, tx_format=TxFormat.JSONRPC):
+        enc = ABIContractEncoder()
+        enc.method('gimme')
+        data = enc.get()
+        tx = self.template(sender_address, contract_address, use_nonce=True)
+        tx = self.set_code(tx, data)
+        tx = self.finalize(tx, tx_format)
+        return tx
+
+
     @classmethod
     def parse_give_to_request(self, v):
         v = strip_0x(v)
@@ -115,12 +125,12 @@ class Faucet(TxFactory):
         return tx
 
 
-    def usable_for(self, contract_address, address, sender_address=ZERO_ADDRESS, id_generator=None):
+    def nxet_time(self, contract_address, address, sender_address=ZERO_ADDRESS, id_generator=None):
         j = JSONRPCRequest(id_generator)
         o = j.template()
         o['method'] = 'eth_call'
         enc = ABIContractEncoder()
-        enc.method('cooldown')
+        enc.method('nextTime')
         enc.typ(ABIContractType.ADDRESS)
         enc.address(address)
         data = add_0x(enc.get())
@@ -177,6 +187,8 @@ class Faucet(TxFactory):
     @classmethod
     def parse_token_amount(self, v):
         return abi_decode_single(ABIContractType.UINT256, v)
+
+    
 
 
 Faucet.build_signatures()

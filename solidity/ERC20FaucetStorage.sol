@@ -15,7 +15,7 @@ contract SingleShotFaucetStorage {
 	event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 	event AddressAdded(address indexed addedAccount, uint256 indexed accountIndex); // AccountsIndex
 
-	constructor() public {
+	constructor() {
 		owner = msg.sender;
 		entry.push(address(0));
 		usedAccounts[address(0)] = 0;

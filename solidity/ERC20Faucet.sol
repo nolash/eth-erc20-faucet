@@ -6,8 +6,10 @@ contract SingleShotFaucet {
 
 	address owner;
 	mapping( address => bool) overriders; // TODO replace with writers
-	uint256 amount;
-	address public token; // Faucet
+	// Implements Faucet
+	uint256 public tokenAmount;
+	// Implements Faucet
+	address public token;
 	address store;
 	address accountsIndex;
 	mapping(address => bool) writers;
@@ -31,13 +33,13 @@ contract SingleShotFaucet {
 	// Implements Faucet
 	function setAmount(uint256 _amount) public returns (bool) {
 		require(overriders[msg.sender]);
-		amount = _amount;
-		emit  FaucetAmountChange(_amount);
+		tokenAmount = _amount;
+		emit FaucetAmountChange(_amount);
 		return true;
 	}
 
 	// Implements Faucet
-	function giveTo(address _recipient) public returns (bool) {
+	function giveTo(address _recipient) public returns (uint256) {
 		require(!overriders[_recipient], 'ERR_ACCESS');
 	
 		bool _ok;
@@ -56,21 +58,21 @@ contract SingleShotFaucet {
 		(_ok, _result) = store.call(abi.encodeWithSignature("add(address)", _recipient));
 		require(_ok, 'ERR_MARK_FAIL');
 
-		(_ok, _result) = token.call(abi.encodeWithSignature("transfer(address,uint256)", _recipient, amount));
+		(_ok, _result) = token.call(abi.encodeWithSignature("transfer(address,uint256)", _recipient, tokenAmount));
 		if (!_ok) {
 			revert('ERR_TRANSFER');
 		}
 			
-		emit Give(_recipient, token, amount);
-		return true;
+		emit Give(_recipient, token, tokenAmount);
+		return tokenAmount;
 	}
 
-	function gimme() public returns (bool) {
+	function gimme() public returns (uint256) {
 		return giveTo(msg.sender);
 	}
 
 	// Implements Faucet
-	function cooldown(address _recipient) public returns (uint256) {
+	function nextTime(address _recipient) public returns (uint256) {
 		bool _ok;
 		bytes memory _result;
 
@@ -83,11 +85,6 @@ contract SingleShotFaucet {
 		} else {
 			return 0;
 		}
-	}
-
-	// Implements Faucet
-	function tokenAmount() public view returns (uint256) {
-		return amount;
 	}
 
 	// Implements Writer

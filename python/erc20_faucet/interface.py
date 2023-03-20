@@ -125,7 +125,7 @@ class Faucet(TxFactory):
         return tx
 
 
-    def nxet_time(self, contract_address, address, sender_address=ZERO_ADDRESS, id_generator=None):
+    def next_time(self, contract_address, address, sender_address=ZERO_ADDRESS, id_generator=None):
         j = JSONRPCRequest(id_generator)
         o = j.template()
         o['method'] = 'eth_call'
@@ -189,6 +189,4 @@ class Faucet(TxFactory):
         return abi_decode_single(ABIContractType.UINT256, v)
 
     
-
-
 Faucet.build_signatures()

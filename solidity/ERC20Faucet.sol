@@ -13,8 +13,7 @@ contract SingleShotFaucet {
 	mapping(address => bool) writers;
 	uint256 cooldownDisabled;
 
-	event FaucetUsed(address indexed _recipient, address indexed _token, uint256 _value);
-	event FaucetFail(address indexed _recipient, address indexed _token, uint256 _value);
+	event Give(address indexed _recipient, address indexed _token, uint256 _value);
 	event FaucetAmountChange(uint256 _value);
 
 	constructor(address[] memory _overriders, address _token, address _store, address _accountsIndex) {
@@ -59,11 +58,10 @@ contract SingleShotFaucet {
 
 		(_ok, _result) = token.call(abi.encodeWithSignature("transfer(address,uint256)", _recipient, amount));
 		if (!_ok) {
-			emit FaucetFail(_recipient, token, amount);
 			revert('ERR_TRANSFER');
 		}
 			
-		emit FaucetUsed(_recipient, token, amount);
+		emit Give(_recipient, token, amount);
 		return true;
 	}
 

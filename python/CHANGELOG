@@ -1,6 +1,7 @@
 - 0.6.0
 	* Rename cooldown to nextTime in solidity contract.
 	* Rename usable_for to next_time in python interface
+	* Remove solidity compiler warnings
 - 0.5.0
 	* upgrade chainlib to 0.4.7
 [...]

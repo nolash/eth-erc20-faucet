@@ -1,46 +1,67 @@
-pragma solidity >0.6.11;
+pragma solidity >=0.8.0;
 
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 contract SingleShotFaucet {
-
-	address owner;
-	mapping( address => bool) overriders; // TODO replace with writers
-	uint256 amount;
-	address public token; // Faucet
+	address public token;
 	address store;
 	address accountsIndex;
-	mapping(address => bool) writers;
-	uint256 cooldownDisabled;
+	uint256 constant cooldownDisabled = uint256(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
 
-	event FaucetUsed(address indexed _recipient, address indexed _token, uint256 _value);
-	event FaucetFail(address indexed _recipient, address indexed _token, uint256 _value);
+	// Implements ERC173
+	address public owner;
+
+	// Implements Writer
+	mapping( address => bool) public isWriter;
+
+	// Implements Faucet
+	uint256 public tokenAmount;
+
+	// Implements Faucet
 	event FaucetAmountChange(uint256 _value);
 
-	constructor(address[] memory _overriders, address _token, address _store, address _accountsIndex) {
+	// Implements Writer
+	event WriterAdded(address _account);
+
+	// Implements Writer
+	event WriterDeleted(address _account);
+
+	// Implements EIP 173
+	event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+	constructor(address _token, address _store, address _accountsIndex) {
 		owner = msg.sender;
-		overriders[msg.sender] = true;
-		for (uint i = 0; i < _overriders.length; i++) {
-			overriders[_overriders[i]] = true;
-		}
 		store = _store;
 		token = _token;
 		accountsIndex = _accountsIndex;
-		cooldownDisabled = uint256(0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);
 	}
 
-	// Implements Faucet
+	// Implements Writer
+	function addWriter(address _address) public returns(bool) {
+		require(msg.sender == owner, 'ERR_AXX');
+		isWriter[_address] = true;
+		emit WriterAdded(_address);
+		return true;
+	}
+
+	// Implements Writer
+	function deleteWriter(address _address) public returns(bool) {
+		require(msg.sender == owner || msg.sender == _address, 'ERR_AXX');
+		isWriter[_address] = false;
+		emit WriterDeleted(_address);
+		return true;
+	}
+
+	// Change faucet amount
 	function setAmount(uint256 _amount) public returns (bool) {
-		require(overriders[msg.sender]);
-		amount = _amount;
+		require(isWriter[msg.sender] || msg.sender == owner);
+		tokenAmount = _amount;
 		emit  FaucetAmountChange(_amount);
 		return true;
 	}
 
 	// Implements Faucet
-	function giveTo(address _recipient) public returns (bool) {
-		require(!overriders[_recipient], 'ERR_ACCESS');
-	
+	function giveTo(address _recipient) public returns (uint256) {
 		bool _ok;
 		bytes memory _result;
 
@@ -51,28 +72,37 @@ contract SingleShotFaucet {
 
 		(_ok, _result) = store.call(abi.encodeWithSignature("have(address)", _recipient));
 		
-		require(_result[31] == 0, 'ERR_ACCOUNT_USED'); // less conversion than: // require(abi.decode(_result, (bool)) == false, 'ERR_ACCOUNT_USED');
-
-		//(_ok, _result) = store.call(abi.encodeWithSignature("lock(address)", _recipient));
+		require(_result[31] == 0, 'ERR_ACCOUNT_USED');
 		(_ok, _result) = store.call(abi.encodeWithSignature("add(address)", _recipient));
 		require(_ok, 'ERR_MARK_FAIL');
 
-		(_ok, _result) = token.call(abi.encodeWithSignature("transfer(address,uint256)", _recipient, amount));
+		(_ok, _result) = token.call(abi.encodeWithSignature("transfer(address,uint256)", _recipient, tokenAmount));
 		if (!_ok) {
-			emit FaucetFail(_recipient, token, amount);
 			revert('ERR_TRANSFER');
 		}
 			
-		emit FaucetUsed(_recipient, token, amount);
-		return true;
+		return tokenAmount;
 	}
 
-	function gimme() public returns (bool) {
+	// Implements Faucet
+	function gimme() public returns (uint256) {
 		return giveTo(msg.sender);
 	}
 
 	// Implements Faucet
-	function cooldown(address _recipient) public returns (uint256) {
+	function check(address _recipient) public returns (bool) {
+		bool _ok;
+		bytes memory _result;
+
+		(_ok, _result) = store.call(abi.encodeWithSignature("have(address)", _recipient));
+
+		require(_ok, 'ERR_STORE_FAIL');
+		
+		return _result[31] == 0x00;
+	}
+
+	// Implements Faucet
+	function nextTime(address _recipient) public returns (uint256) {
 		bool _ok;
 		bytes memory _result;
 
@@ -82,39 +112,37 @@ contract SingleShotFaucet {
 
 		if (_result[31] == 0x01) {
 			return cooldownDisabled;
-		} else {
-			return 0;
 		}
+
+		return 0;
 	}
 
 	// Implements Faucet
-	function tokenAmount() public view returns (uint256) {
-		return amount;
+	function nextBalance(address _recipient) public pure returns (uint256) {
+		_recipient;
+		return 0;
 	}
 
-	// Implements Writer
-	function addWriter(address _writer) public returns (bool) {
-		require(owner == msg.sender);
-		writers[_writer] = true;
-		return true;
+	// Implements EIP 173
+	function transferOwnership(address _newOwner) external {
+		address _oldOwner;
+
+		require(msg.sender == owner);
+		_oldOwner = owner;
+
+		owner = _newOwner;
+
+		emit OwnershipTransferred(_oldOwner, owner);
 	}
 
-	// Implements Writer
-	function deleteWriter(address _writer) public returns (bool) {
-		require(owner == msg.sender);
-		delete writers[_writer];
-		return true;
-	}
-
-	// Implements EIP165
 	function supportsInterface(bytes4 _sum) public pure returns (bool) {
 		if (_sum == 0x01ffc9a7) { // EIP165
 			return true;
 		}
-		if (_sum == 0xde344547) { // Faucet
+		if (_sum == 0x1a3ac634) { // Faucet
 			return true;
 		}
-		if (_sum == 0x80c84bd6) { // Writer
+		if (_sum == 0xabe1f1f5) { // Writer
 			return true;
 		}
 		return false;

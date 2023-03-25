@@ -26,6 +26,7 @@ from giftable_erc20_token import GiftableToken
 # local imports
 from erc20_faucet import Faucet
 from erc20_faucet.faucet import SingleShotFaucet
+from eth_owned import ERC173
 
 logging.basicConfig(level=logging.DEBUG)
 logg = logging.getLogger()
@@ -40,34 +41,41 @@ class TestFaucet(EthTesterCase):
         c = SingleShotFaucet(self.chain_spec, signer=self.signer, nonce_oracle=nonce_oracle)
         (tx_hash, o) = c.store_constructor(self.accounts[0])
         r = self.conn.do(o)
-        logg.debug('store deployed with hash {}'.format(r))
-        
+        logg.debug('store published with hash {}'.format(r))
+
         o = receipt(r)
         r = self.conn.do(o)
         self.assertEqual(r['status'], 1)
         self.store_address = to_checksum_address(r['contract_address'])
         logg.debug('store contract {}'.format(self.store_address))
 
+
         ct = GiftableToken(self.chain_spec, signer=self.signer, nonce_oracle=nonce_oracle)
         (tx_hash_hex, o) = ct.constructor(self.accounts[0], 'Foo Token', 'FOO', 6)
         r = self.conn.do(o)
-        logg.debug('token deployed with hash {}'.format(r))
+        logg.debug('token published with hash {}'.format(r))
 
         o = receipt(r)
         r = self.conn.do(o)
         self.token_address = to_checksum_address(r['contract_address'])
         logg.debug('token contract {}'.format(self.store_address))
 
-        (tx_hash, o) = c.constructor(self.accounts[0], self.token_address, self.store_address, ZERO_ADDRESS, [self.accounts[1]])
+        (tx_hash, o) = c.constructor(self.accounts[0], self.token_address, self.store_address, ZERO_ADDRESS)
         r = self.conn.do(o)
-        logg.debug('faucet deployed with hash {}'.format(r))
-
+        logg.debug('faucet published with hash {}'.format(r))
         o = receipt(r)
         r = self.conn.do(o)
         self.assertEqual(r['status'], 1)
 
         self.address = to_checksum_address(r['contract_address'])
         logg.debug('faucet contract {}'.format(self.address))
+
+        c_owned = ERC173(self.chain_spec, signer=self.signer, nonce_oracle=nonce_oracle)
+        (tx_hash, o) = c_owned.transfer_ownership(self.store_address, self.accounts[0], self.address)
+        r = self.conn.do(o)
+        o = receipt(r)
+        r = self.conn.do(o)
+        self.assertEqual(r['status'], 1)
 
 
     def test_basic(self):
